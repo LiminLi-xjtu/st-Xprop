@@ -1,0 +1,68 @@
+{
+    "CHD": {
+        "D4": {
+            "lambda_1": 10,
+            "lambda_2": 50,
+            "lambda_3": 10,
+            "lambda_4": 5,
+            "lr_pr": 1e-2,
+            "lr": 1e-5,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 0.5,
+            "r2": 0.5,
+            "vit_type": "stMVC",
+            "adj_type": "KNN",
+            "k_spatial": 6,
+            "k_image": 8
+        },
+        "D7": {
+            "lambda_1": 10,
+            "lambda_2": 50,
+            "lambda_3": 10,
+            "lambda_4": 5,
+            "lr_pr": 1e-2,
+            "lr": 1e-5,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 0.5,
+            "r2": 0.5,
+            "vit_type": "stMVC",
+            "adj_type": "KNN",
+            "k_spatial": 3,
+            "k_image": 8
+        },
+        "D10": {
+            "lambda_1": 10,
+            "lambda_2": 50,
+            "lambda_3": 10,
+            "lambda_4": 5,
+            "lr_pr": 1e-2,
+            "lr": 1e-5,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 1.0,
+            "r2": 0.0,
+            "vit_type": "stMVC",
+            "adj_type": "KNN",
+            "k_spatial": 3,
+            "k_image": 8
+        },
+        "D14": {
+            "lambda_1": 10,
+            "lambda_2": 50,
+            "lambda_3": 10,
+            "lambda_4": 5,
+            "lr_pr": 1e-2,
+            "lr": 1e-5,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 1.0,
+            "r2": 0.0,
+            "vit_type": "stMVC",
+            "adj_type": "KNN",
+            "k_spatial": 6,
+            "k_image": 6
+        }
+    }
+}
