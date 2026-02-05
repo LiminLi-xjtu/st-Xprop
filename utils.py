@@ -8,7 +8,6 @@ from sklearn.decomposition import PCA
 import ot
 
 from adj import adj, normalize_adj
-from load_img_vit import load_embeddings_from_h5
 
 def load_data(args):
     dataset_name=args.name
@@ -303,5 +302,6 @@ class EarlyStopping:
             print(f"Loss decreased ({self.loss_min:.6f} --> {loss:.6f}).  Saving model ...")
         torch.save(model.state_dict(), self.checkpoint_file)
         self.loss_min = loss
+
 
 
