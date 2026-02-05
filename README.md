@@ -2,7 +2,7 @@
 
 **st-Xprop** is a method for spatial domains identification in multi-modal spatial transcriptomics. This repository contains code and examples for running st-Xprop on real spatial transcriptomics datasets.
 
-![image](https://github.com/LiminLi-xjtu/st-Xprop/blob/master/img/st-Xprop_arch.jpg)
+![image](https://github.com/LiminLi-xjtu/st-Xprop/blob/master/st-Xprop_arch.jpg)
 
 ## System Requirements
 
@@ -37,7 +37,7 @@ To run st-Xprop, you need to install the following dependencies:
 
 The input data for st-Xprop should be in the .h5ad or .h5 format. If your data is in a different format, refer to the [Scanpy](https://scanpy.readthedocs.io/en/stable/) or [anndata](https://anndata.readthedocs.io/en/stable/) tutorials for instructions on how to convert your data into the .h5ad format.
 
-For histological data, the preprocessing method can be either stMVC (Preprocessing_stMVC.py) or a pre-trained Vision Transformer (img_vit.py)
+For histological data, the preprocessing method can be either stMVC (Preprocessing_stMVC.py) or a pre-trained Vision Transformer (Preprocessing_ViT.py)
 
 
 ### Data access
