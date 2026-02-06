@@ -27,7 +27,7 @@ def get_args():
     parser.add_argument('--lambda_3', type=float, default=10)
     parser.add_argument('--lambda_4', type=float, default=5)
     
-    parser.add_argument('--vit_type', type=str, default='stMVC') 
+    parser.add_argument('--image_type', type=str, default='stMVC') 
 
     parser.add_argument('--r1', type=float, default=1)
     parser.add_argument('--r2', type=float, default=0)
@@ -65,3 +65,4 @@ def get_args():
 
     args = argparse.Namespace(**args_dict)
     return args
+
