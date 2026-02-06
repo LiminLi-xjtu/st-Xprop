@@ -11,7 +11,7 @@
             "seed": 0,
             "r1": 0.5,
             "r2": 0.5,
-            "vit_type": "stMVC",
+            "image_type": "stMVC",
             "adj_type": "KNN",
             "k_spatial": 6,
             "k_image": 8
@@ -27,7 +27,7 @@
             "seed": 0,
             "r1": 0.5,
             "r2": 0.5,
-            "vit_type": "stMVC",
+            "image_type": "stMVC",
             "adj_type": "KNN",
             "k_spatial": 3,
             "k_image": 8
@@ -43,7 +43,7 @@
             "seed": 0,
             "r1": 1.0,
             "r2": 0.0,
-            "vit_type": "stMVC",
+            "image_type": "stMVC",
             "adj_type": "KNN",
             "k_spatial": 3,
             "k_image": 8
@@ -59,10 +59,11 @@
             "seed": 0,
             "r1": 1.0,
             "r2": 0.0,
-            "vit_type": "stMVC",
+            "image_type": "stMVC",
             "adj_type": "KNN",
             "k_spatial": 6,
             "k_image": 6
         }
     }
+
 }
