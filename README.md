@@ -53,7 +53,7 @@ All datasets used in this study have been curated and deposited on [Zenodo](http
 
 ### Configuration
 
-Model hyperparameters and dataset-specific settings are defined in config.json.
+Model hyperparameters and dataset-specific settings are defined in config_stMVC.json.
 You may adjust these parameters according to your experimental requirements.
 
 Example parameter settings in the config file:
