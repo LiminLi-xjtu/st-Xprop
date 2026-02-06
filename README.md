@@ -41,8 +41,9 @@ If your data is stored in other formats, please refer to the following resources
 ### Histological Image Preprocessing
 
 Histological image features can be extracted using one of the following methods:
-* **stMVC-based preprocessing (Preprocessing_stMVC.py)
-* **Pre-trained Vision Transformer (ViT) (Preprocessing_ViT.py)
+* stMVC-based preprocessing (Preprocessing_stMVC.py)
+* Pre-trained Vision Transformer (ViT) (Preprocessing_ViT.py)
+  
 The choice of method should be specified via the image_type field in the configuration file.
 
 ### Data Availability
@@ -59,17 +60,18 @@ Example parameter settings in the config file:
 
 ```bash
 
-lambda_1-lambda_4: The weights for loss regularization
-lr_pr: The pretraining learning rate for optimization
-lr: The training learning rate for optimization
-epoch: The number of training epochs
-seed: The random seed for reproducibility
-r1: The weight of spatial part for adjacency matrix construction in the clustering module
-r2: The weight of image part for adjacency matrix construction in the clustering module
-image_type: The image feature type that depends on the histoligical image is preprocessed by stMVC or ViT
-adj_type: The spatial adjacency matrix is constructed using a radius-based neighbor strategy or k-nearest neighbor (KNN) algorithm
-k_image: The number of nearest neighbors used for image adjacency matrix construction
-rad_cutoff: The radius used for spatial adjacency matrix construction
+lambda_1 – lambda_4 : Weights for different loss terms
+lr_pr               : Learning rate for the pretraining stage
+lr                  : Learning rate for the main training stage
+epoch_pre           : Number of pretraining epochs
+epoch               : Number of training epochs
+seed                : Random seed for reproducibility
+r1                  : Weight of spatial adjacency in clustering module
+r2                  : Weight of image adjacency in clustering module
+image_type           : Type of image feature (stMVC or ViT)
+adj_type             : Spatial adjacency construction method (Radius or KNN)
+k_image              : Number of neighbors for image adjacency (KNN)
+rad_cutoff           : Radius cutoff for spatial adjacency
 
 ```
 ### Running st-Xprop
