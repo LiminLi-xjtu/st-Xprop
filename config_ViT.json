@@ -1,0 +1,72 @@
+{
+    "CHD": {
+        "D4": {
+            "lambda_1": 2,
+            "lambda_2": 10,
+            "lambda_3": 2,
+            "lambda_4": 1,
+            "lr_pr": 1e-5,
+            "lr": 1e-4,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 0.5,
+            "r2": 0.5,
+            "image_type": "ViT",
+            "image_emb_type": "vit_patch_cls",
+            "adj_type": "KNN",
+            "k_spatial": 3,
+            "k_image": 3
+        },
+        "D7": {
+            "lambda_1": 2,
+            "lambda_2": 10,
+            "lambda_3": 2,
+            "lambda_4": 1,
+            "lr_pr": 1e-5,
+            "lr": 1e-4,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 0.5,
+            "r2": 0.5,
+            "image_type": "ViT",
+            "image_emb_type": "vit_patch_cls",
+            "adj_type": "KNN",
+            "k_spatial": 3,
+            "k_image": 3
+        },
+        "D10": {
+            "lambda_1": 2,
+            "lambda_2": 10,
+            "lambda_3": 2,
+            "lambda_4": 1,
+            "lr_pr": 1e-2,
+            "lr": 1e-4,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 0.5,
+            "r2": 0.5,
+            "image_type": "ViT",
+            "image_emb_type": "vit_patch_cls",
+            "adj_type": "KNN",
+            "k_spatial": 3,
+            "k_image": 3
+        },
+        "D14": {
+            "lambda_1": 2,
+            "lambda_2": 10,
+            "lambda_3": 2,
+            "lambda_4": 1,
+            "lr_pr": 1e-5,
+            "lr": 1e-4,
+            "epoch": 1000,
+            "seed": 0,
+            "r1": 0.5,
+            "r2": 0.5,
+            "image_type": "ViT",
+            "image_emb_type": "vit_patch_cls",
+            "adj_type": "KNN",
+            "k_spatial": 3,
+            "k_image": 3
+        }
+    }
+}

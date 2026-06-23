@@ -9,6 +9,7 @@ import ot
 
 from adj import adj, normalize_adj
 
+
 def load_data(args):
     dataset_name=args.name
     dataset_slice=args.slice
@@ -45,9 +46,9 @@ def load_data(args):
         adata = sc.read_h5ad(f'{load_path}{args.slice}.h5ad')
         adata.obs["ground_truth"] = adata.obs["region"]
         
-    get_process(adata,pca_n=50)
+    get_process(adata,pca_n=100)
     
-    if args.vit_type=='stMVC':
+    if args.image_type=='stMVC':
         data_image_csv = pd.read_csv(f"{load_path}stMVC.csv", index_col=0) 
         barcode_to_index = {barcode: i for i, barcode in enumerate(data_image_csv.index)}
         common_barcodes = [bc for bc in adata.obs_names if bc in barcode_to_index]
@@ -56,7 +57,7 @@ def load_data(args):
         data_image = datai_index.values 
         adata = adata[np.array(common_barcodes), :]
     else:
-        h5_path = f"{load_path}{args.vit_type}_embeddings.h5"
+        h5_path = f"{load_path}{args.image_emb_type}_embeddings.h5"
         data_image_h5 = load_embeddings_from_h5(h5_path)
         barcode_to_index = {barcode: i for i, barcode in enumerate(data_image_h5[0])}
         common_barcodes = [bc for bc in adata.obs_names if bc in barcode_to_index]
@@ -70,7 +71,7 @@ def load_data(args):
     A_P = torch.FloatTensor(A_P).to(args.device)
 
     # adj for image
-    pca = PCA(n_components=100)
+    pca = PCA(n_components=100, random_state=args.seed)
     image_spatial=pca.fit_transform(data_image)
     adata.obsm["image_spatial"]=image_spatial
     A_I = adj(adata,view="image",model="KNN",rad_cutoff=args.rad_cutoff,k_cutoff=args.k_image)
@@ -97,50 +98,19 @@ def load_embeddings_from_h5(h5_path):
         barcodes = [s.decode('utf-8') if isinstance(s, bytes) else s for s in f['barcodes'][:]]
     return barcodes, features
 
-def get_process(adata,pca_n):
+def get_process(adata, pca_n):
     adata.var_names_make_unique()
     sc.pp.filter_genes_dispersion(adata, n_top_genes=3000)
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
-    # sc.tl.pca(adata, n_comps=50)
-    X = adata.X.toarray()
-    pca_x = PCA(n_components=pca_n)
-    X=pca_x.fit_transform(X)
-    adata.obsm["X_pca"] = X
+    sc.pp.scale(adata)
+    sc.tl.pca(adata, n_comps=pca_n)
    
     return adata
     
 
-# loss
 
-def target_distribution(Q):
-    """
-    calculate the target distribution (student-t distribution)
-    Args:
-        Q: the soft assignment distribution
-    Returns: target distribution P
-    """
-    weight = Q ** 2 / Q.sum(0)
-    P = (weight.t() / weight.sum(1)).t()
-    return P
-
-def reconstruction_loss(X_hat, X):
-    loss = F.mse_loss(X_hat, X)
-    return loss
-
-def distribution_loss(Q, P):
-    """
-    calculate the clustering guidance loss L_{KL}
-    Args:
-        Q: the soft assignment distribution
-        P: the target distribution
-    Returns: L_{KL}
-    """
-    loss = F.kl_div((Q[0].log() + Q[1].log() + Q[2].log()) / 3, P, reduction="batchmean")
-    return loss
-
-
-def mclust_R(adata, num_cluster, modelNames="EEE", used_obsm="emb_pca", random_seed=2020):
+def mclust_R(adata, num_cluster, modelNames="EEE", used_obsm="emb_pca", random_seed=123):
     """\
     Clustering using the mclust algorithm.
     The parameters are the same as those in the R package mclust.
@@ -152,18 +122,14 @@ def mclust_R(adata, num_cluster, modelNames="EEE", used_obsm="emb_pca", random_s
     from rpy2.robjects.conversion import localconverter
     robjects.r.library("mclust")
 
-    # rpy2.robjects.numpy2ri.activate()
     r_random_seed = robjects.r["set.seed"]
     r_random_seed(random_seed)
     rmclust = robjects.r["Mclust"]
 
-    # res = rmclust(rpy2.robjects.numpy2ri.numpy2rpy(adata.obsm[used_obsm]), num_cluster, modelNames)
-    # mclust_res = np.array(res[-2])
 
     with localconverter(robjects.default_converter + numpy2ri.converter):
         r_data = robjects.conversion.py2rpy(adata.obsm[used_obsm])
         res = rmclust(r_data, num_cluster, modelNames)
-    # mclust_res = np.array(res.rx2("classification"))
     classification_idx = list(res.names()).index("classification")
     mclust_res = np.array(res[classification_idx])
 
@@ -214,11 +180,6 @@ def clustering_kmeans(adata, n_clusters=7, radius=50, used_obsm="st-Xprop", meth
 
 def clustering(adata, n_clusters=7, radius=50, used_obsm="st-Xprop", method="mclust", start=0.1, end=3.0, increment=0.01,
                refinement=False):
-
-    # pca = PCA(n_components=20, random_state=42)
-    # embedding = pca.fit_transform(adata.obsm["emb"].copy())
-    # adata.obsm["emb_pca"] = embedding
-
     if method == "mclust":
         adata = mclust_R(adata, used_obsm=used_obsm, num_cluster=n_clusters)
     elif method == "kmeans":
@@ -302,6 +263,3 @@ class EarlyStopping:
             print(f"Loss decreased ({self.loss_min:.6f} --> {loss:.6f}).  Saving model ...")
         torch.save(model.state_dict(), self.checkpoint_file)
         self.loss_min = loss
-
-
-

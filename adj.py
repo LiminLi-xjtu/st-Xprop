@@ -12,6 +12,9 @@ def Cal_Spatial_Net(adata,view='gene', rad_cutoff=None, k_cutoff=None, model='Ra
     if view == 'image':
         coor = pd.DataFrame(adata.obsm['image_spatial'])
         coor.index = adata.obs.index
+    if view == 'expr':
+        coor = pd.DataFrame(adata.obsm['X_pca'])
+        coor.index = adata.obs.index    
     if model == 'Radius':
         nbrs = sklearn.neighbors.NearestNeighbors(radius=rad_cutoff).fit(coor)
         distances, indices = nbrs.radius_neighbors(coor, return_distance=True)
@@ -55,7 +58,7 @@ def adj(adata,model,view,rad_cutoff,k_cutoff):
     Cal_Spatial_Net(adata, view=view,model=model,rad_cutoff=rad_cutoff,k_cutoff=k_cutoff)
     Spatial_Net = adata.uns['Spatial_Net']
     adata_Vars = adata
-    X = pd.DataFrame(adata_Vars.X.toarray()[:, ], index=adata_Vars.obs.index, columns=adata_Vars.var.index)
+    X = pd.DataFrame(adata_Vars.X[:, ], index=adata_Vars.obs.index, columns=adata_Vars.var.index)
     cells = np.array(X.index)
     cells_id_tran = dict(zip(cells, range(cells.shape[0])))
     G_df = Spatial_Net.copy()
@@ -70,68 +73,37 @@ def adj(adata,model,view,rad_cutoff,k_cutoff):
 
 
 
-def normalize_adj(adj, self_loop=False, symmetry=False):
+def normalize_adj(adj, self_loop=True, symmetry=True):
     """
     normalize the adj matrix
-    :param adj: input adj matrix
+    :param adj: input adj matrix (numpy array)
     :param self_loop: if add the self loop or not
-    :param symmetry: symmetry normalize or not
+    :param symmetry: symmetry normalize (D^{-0.5} A D^{-0.5}) or 
+                     random-walk normalize (D^{-1} A)
     :return: the normalized adj matrix
     """
-    # add the self_loop
+    # add self loop
     if self_loop:
         adj_tmp = adj + np.eye(adj.shape[0])
     else:
-        adj_tmp = adj
+        adj_tmp = adj.copy()
 
-    # calculate degree matrix and it's inverse matrix
-    d = np.diag(adj_tmp.sum(0))
-    d_inv = np.linalg.inv(d)
-
-    # symmetry normalize: D^{-0.5} A D^{-0.5}
+    # degree matrix
+    d = np.array(adj_tmp.sum(1)).flatten()  
+    d_inv = np.power(d, -1.0, where=d!=0)
+    d_inv[np.isinf(d_inv)] = 0.0
+    
     if symmetry:
-        sqrt_d_inv = np.sqrt(d_inv)
-        norm_adj = np.matmul(np.matmul(sqrt_d_inv, adj_tmp), adj_tmp)
-
-    # non-symmetry normalize: D^{-1} A
+        # D^{-0.5} A D^{-0.5}
+        d_inv_sqrt = np.power(d, -0.5, where=d!=0)
+        d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.0
+        d_mat_inv_sqrt = np.diag(d_inv_sqrt)
+        norm_adj = d_mat_inv_sqrt.dot(adj_tmp).dot(d_mat_inv_sqrt)
     else:
-        norm_adj = np.matmul(d_inv, adj_tmp)
+        # D^{-1} A
+        d_mat_inv = np.diag(d_inv)
+        norm_adj = d_mat_inv.dot(adj_tmp)
 
     return norm_adj
 
 
-def normalize_adj_lap(adj, self_loop=False, symmetry=False, return_laplacian=True):
-    """
-    normalize the adj matrix
-    :param adj: input adj matrix
-    :param self_loop: if add the self loop or not
-    :param symmetry: symmetry normalize or not
-    :return: the normalized adj matrix
-    """
-    # add the self_loop
-    if self_loop:
-        adj_tmp = adj + np.eye(adj.shape[0])
-    else:
-        adj_tmp = adj
-
-    # calculate degree matrix and it's inverse matrix
-    d = np.diag(adj_tmp.sum(0))
-    d_inv = np.linalg.inv(d)
-
-    # symmetry normalize: D^{-0.5} A D^{-0.5}
-    if symmetry:
-        sqrt_d_inv = np.sqrt(d_inv)
-        norm_adj = np.matmul(np.matmul(sqrt_d_inv, adj_tmp), adj_tmp)
-
-    # non-symmetry normalize: D^{-1} A
-    else:
-        norm_adj = np.matmul(d_inv, adj_tmp)
-
-    if return_laplacian:
-        if symmetry:
-            laplacian = np.eye(adj.shape[0]) - norm_adj  # L_sym = I - D^{-1/2} A D^{-1/2}
-        else:
-            laplacian = np.eye(adj.shape[0]) - norm_adj  # L_rw = I - D^{-1} A
-        return norm_adj, laplacian
-
-    return norm_adj

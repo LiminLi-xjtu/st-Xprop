@@ -7,7 +7,7 @@ import os
 import pandas as pd
 import sys
 
-from opt_stMVC import get_args
+from opt import get_args
 from utils import load_data
 from model import Model, Trainer
 
@@ -15,12 +15,14 @@ from model import Model, Trainer
 def main(args):
 
     torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
     random.seed(args.seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+    
+    torch.cuda.manual_seed(args.seed)          
+    os.environ['PYTHONHASHSEED'] = str(args.seed)  
 
     adata, A_P, A_I  = load_data(args)
     X = torch.FloatTensor(adata.obsm["X_pca"])
@@ -32,6 +34,7 @@ def main(args):
     result_df = ari_df.copy()
     result_df["name"] = args.name
     result_df["slice"] = args.slice 
+    result_df["seed"] = args.seed
     result_df["vit_type"] = args.vit_type
     result_df["adj_type"] = args.adj_type
     result_df["lr_pr"] = args.lr_pr
@@ -46,7 +49,7 @@ def main(args):
     result_df["lambda_3"] = args.lambda_3
     result_df["lambda_4"] = args.lambda_4
 
-    cols = ["name","slice","vit_type","adj_type","lr_pr","lr","rad_cutoff","k_spatial","k_image","r1","r2",
+    cols = ["name","slice","seed","vit_type","adj_type","lr_pr","lr","rad_cutoff","k_spatial","k_image","r1","r2",
             "lambda_1","lambda_2","lambda_3","lambda_4"] + [col for col in ari_df.columns]
     result_df = result_df[cols]
 
@@ -54,6 +57,7 @@ def main(args):
     if not os.path.exists(logdir):
         os.makedirs(logdir)
 
+    # metrics_log_file = logdir + args.name + "_metrics_stMVC.csv"
     metrics_log_file = logdir + "metrics_stMVC.csv"
 
     if not os.path.exists(metrics_log_file):

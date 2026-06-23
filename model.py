@@ -54,69 +54,72 @@ class Model(nn.Module):
         self.A_P, self.A_I = A_P, A_I
 
         # GCN encoder
-        self.gcn_1 = GCN(input_dim, latent_dim, init=True, gcn_layers=1, k_hop=1, residual=False)
-        self.gcn_2 = GCN(latent_dim, latent_dim, init=False, gcn_layers=1, k_hop=1)
-        
-        self.gcn_3 = GCN(input_dim, latent_dim, init=True, gcn_layers=1)
-        self.gcn_4 = GCN(latent_dim, latent_dim, init=False, gcn_layers=1)
+        activation = nn.LeakyReLU(0.2)
+        self.gcn_1 = GCN(input_dim, latent_dim, init=True, gcn_layers=1, k_hop=1, residual=False, activation=activation)
+        self.gcn_2 = GCN(latent_dim, latent_dim, init=False, gcn_layers=1, k_hop=1, activation=activation)
 
-        # Gene expression encoder (MLP)
         self.encoder_expr = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, latent_dim)
+            nn.Linear(input_dim, hidden_dim, bias=False),
+            nn.LayerNorm(hidden_dim),
+            nn.LeakyReLU(negative_slope=0.1),
+            nn.Linear(hidden_dim, latent_dim, bias=False),
+            nn.LayerNorm(latent_dim)
         )
-
-        # Decoder for gene expression reconstruction
+        
         self.decoder_expr = nn.Sequential(
             nn.Linear(latent_dim, hidden_dim),
-            nn.ReLU(),
+            nn.LayerNorm(hidden_dim),
+            nn.GELU(),
             nn.Linear(hidden_dim, input_dim)
         )
         
-        # Decoder for adjacency matrix reconstruction (inner product)
-        # self.decoder_adj = lambda Z: torch.sigmoid(Z @ Z.T)
+        for m in self.encoder_expr:
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
 
-        self.cluster_centers = Parameter(torch.Tensor(args.num_clusters, latent_dim), requires_grad=True)
+        for m in self.decoder_expr:
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
 
+        self.cluster_centers = Parameter(torch.randn(args.num_clusters, latent_dim) * 0.01, requires_grad=True)
+
+        
         # fusion parameter from DFCN
         self.a = Parameter(nn.init.constant_(torch.zeros(n_nodes, latent_dim), 0.5), requires_grad=True)
         self.b = Parameter(nn.init.constant_(torch.zeros(n_nodes, latent_dim), 0.5), requires_grad=True)
         self.alpha = Parameter(torch.tensor(0.5), requires_grad=True)
 
-    def q_distribute(self, Z, U_E, Z_G):
+    def q_distribute(self, U, U_P, U_I):
 
-        q = 1.0 / (1.0 + torch.sum(torch.pow(Z.unsqueeze(1) - self.cluster_centers, 2), 2))
+        q = 1.0 / (1.0 + torch.sum(torch.pow(U.unsqueeze(1) - self.cluster_centers, 2), 2))
         q = (q.t() / torch.sum(q, 1)).t()
 
-        q_ae = 1.0 / (1.0 + torch.sum(torch.pow(U_E.unsqueeze(1) - self.cluster_centers, 2), 2))
-        q_ae = (q_ae.t() / torch.sum(q_ae, 1)).t()
+        q_gp = 1.0 / (1.0 + torch.sum(torch.pow(U_P.unsqueeze(1) - self.cluster_centers, 2), 2))
+        q_gp = (q_gp.t() / torch.sum(q_gp, 1)).t()
 
-        q_gae = 1.0 / (1.0 + torch.sum(torch.pow(Z_G.unsqueeze(1) - self.cluster_centers, 2), 2))
-        q_gae = (q_gae.t() / torch.sum(q_gae, 1)).t()
+        q_gi = 1.0 / (1.0 + torch.sum(torch.pow(U_I.unsqueeze(1) - self.cluster_centers, 2), 2))
+        q_gi = (q_gi.t() / torch.sum(q_gi, 1)).t()
 
-        return [q, q_ae, q_gae]
+        return [q, q_gp, q_gi]
 
 
     def forward(self, X_E, A_P, A_I, args):
-
         U_P = X_E
         U_I = X_E
-        
-        
-        ###Cross-propagative learning module
-        # Spatial view
+
+        # Cross-propagative learning
         U_P = self.gcn_1(U_P, A_P)
         U_P = F.relu(U_P)
-
-        # Image view
         U_I = self.gcn_1(U_I, A_I)
         U_I = F.relu(U_I)
 
         U_CP = self.gcn_2(U_I, A_P)
-        U_I = self.gcn_2(U_P, A_I)
-        U_P = U_CP
-
+        U_I  = self.gcn_2(U_P, A_I)
+        U_P  = U_CP
+        
         # Gene expression encoder
         U_E = self.encoder_expr(X_E)
 
@@ -124,27 +127,25 @@ class Model(nn.Module):
         U_G = (U_P + U_I) / 2
      
         U_C = self.a * U_E + self.b * U_G
-        A_C = args.r1*A_P + args.r2*A_I
-        U_l = torch.spmm(A_C, U_C)
-        S = torch.mm(U_l, U_l.t())
-        S = F.softmax(S, dim=1)
-        U_g = torch.mm(S, U_l)
-        U = self.alpha * U_g + U_l
-
-
-        # Decode for gene expression reconstruction
-        X_E_hat = self.decoder_expr(U)
         
-        # Decode for structure reconstruction
-        # A_recon = self.decoder_adj(U)
+        A_C = args.r1 * A_P + args.r2 * A_I
+        row_sum = A_C.sum(dim=1, keepdim=True).clamp(min=1.0)
+        A_C_norm = A_C / row_sum
+        U_l = torch.mm(A_C_norm, U_C) 
+        
 
-        Q = self.q_distribute(U, U_E, U_G)
+        S = F.softmax(torch.mm(U_l, U_l.t()), dim=1)
+        U_g = torch.mm(S, U_l)
+        U = self.alpha * U_g + U_l  # final latent
+
+        # Decode PCA embedding
+        X_E_hat = self.decoder_expr(U)
 
         return {
             'U': U,
-            'Q': Q,
+            'U_P': U_P,
+            'U_I': U_I,
             'X_E_hat': X_E_hat
-            # 'A_recon': A_recon
         }
 
 
@@ -156,7 +157,6 @@ class Trainer():
 
     def fit(self, adata, y, A_P, A_I, args):
 
-        early_stopping_pretrain = EarlyStopping(patience=20, verbose=False, checkpoint_file='checkpoint_pretrain.pth')
         pretrain(self.model, adata, A_P, A_I, args)
         if y is not None:
             eva_df=train(self.model, self.device, adata, y, A_P, A_I, args)
