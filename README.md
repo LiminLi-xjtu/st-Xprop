@@ -76,15 +76,12 @@ rad_cutoff           : Radius cutoff for spatial adjacency
 ```
 ### Running st-Xprop
 
-To perform spatial domain identification using st-Xprop, run:
+We provide example Jupyter Notebooks demonstrating the complete workflow from data loading to spatial domain identification:
 
-```bash
-python main.py --name <dataset_name> --slice <slice_name>
-```
-where:
+- `example_BRCA.ipynb` — BRCA
+- `example_CHD_D10.ipynb` — CHD (slice D10)
+- `example_CHD_D14.ipynb` — CHD (slice D14)
+- `example_DLPFC_151507.ipynb` — DLPFC (slice 151507)
 
-* `dataset_name` specifies the dataset (e.g., `CHD`)
-* `slice_name` specifies the slice identifier (e.g., `D10`, `D14`)
-
-An example workflow is provided in **`example.ipynb`**.
+These notebooks serve as usage examples. To apply st-Xprop to your own data, simply replace the input data path and adjust dataset-specific parameters (e.g., `name`, `slice`) in the notebook accordingly.
 
